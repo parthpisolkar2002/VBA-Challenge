@@ -1,0 +1,145 @@
+Sub SubHeader()
+    Dim at As Workbook
+    Dim ws As Worksheet
+    Set at = ThisWorkbook
+    For Each ws In at.Sheets
+        ws.Cells(1, 9).Value = "Tickers" 'Names Column I as Tickers
+        ws.Cells(1, 10).Value = "Yearly Change" 'Names Column J as Yearly Change
+        ws.Cells(1, 11).Value = "Percent Change" 'Names Column K as Percent Change
+        ws.Cells(1, 12).Value = "Total Stock Volume" 'Names Column L as Total Stock Volume
+        ws.Cells.EntireColumn.AutoFit 'Adjusts width of column to fit the length of the longest text
+    Next ws
+End Sub
+
+Sub Ticker()
+    Dim at As Workbook
+    Dim ws As Worksheet
+    Dim t As Long
+    Dim LastRow As Long
+    Dim i As Long
+    
+    Set at = ThisWorkbook
+    
+    For Each ws In at.Sheets
+        
+        t = 2 '1 is header
+        LastRow = ws.Cells(ws.Rows.Count, "A").End(xlUp).Row 'Finds index for Last row in the worksheet
+        
+        For i = 2 To LastRow + 1 '+1 is to tackle the last row problem
+            If ws.Cells(i, 1).Value <> ws.Cells(i + 1, 1).Value Then 'Checks if the next value is a different ticker
+                ws.Cells(t, 9).Value = ws.Cells(i, 1).Value 'Conditonally assigns the "new Ticker" to the tickers column
+                t = t + 1 'goes to the next index in the ticker column
+            End If
+        Next i
+    Next ws
+End Sub 'This code won't work for unsorted worksheet, but works in this case
+
+Sub Change()
+    Dim at As Workbook
+    Dim ws As Worksheet
+    Dim BegYear, EndYear As Double
+    Dim t As Long
+    Dim op As Long
+    Dim clos As Long
+    Dim LastRow As Long
+    Dim i As Long
+    Set at = ThisWorkbook
+    For Each ws In at.Sheets
+    
+        LastRow = ws.Cells(ws.Rows.Count, "A").End(xlUp).Row
+        t = 2
+        For i = 2 To LastRow
+            If ws.Cells(i, 1).Value <> ws.Cells(i + 1, 1).Value Then
+                clos = i 'conditionally assigns the current row index to clos if not in the same ticker set
+                EndYear = ws.Cells(i, 6).Value 'also assigns the value to endyear variable
+                If t > 1 Then
+                    ws.Cells(t, 10).Value = EndYear - BegYear 'calculates the yearly change
+                    If (ws.Range("J" & t).Value < 0) Then
+                        ws.Range("J" & t).Interior.Color = RGB(255, 0, 0) 'Red color
+                    Else
+                        ws.Range("J" & t).Interior.Color = RGB(0, 255, 0) 'Green color
+                    End If
+                    ws.Cells(t, 11).Value = ws.Cells(t, 10).Value / BegYear 'Calculates percent change
+                    ws.Cells(t, 11).NumberFormat = "0.00%" 'formats in %
+                    t = t + 1 'to the next column
+                End If
+            'The checking of open value is after the assignment of yearch and perch because
+        '   we want it to calculate the change before it stores any new Open Value
+            ElseIf ws.Cells(i, 1).Value <> ws.Cells(i - 1, 1).Value Then
+            'If value is equal to the next index and not equal to the index before,
+            'It identifies it as new ticker and resets the Open value to the appropriate value
+                op = i
+                BegYear = ws.Cells(i, 3).Value
+            End If
+        Next i
+    Next ws
+End Sub
+
+Sub Volume()
+    Dim at As Workbook
+    Dim ws As Worksheet
+    Dim t As Long
+    Dim LastRow As Long
+    Dim i As Long
+    Set at = ThisWorkbook
+    For Each ws In at.Sheets
+    
+    LastRow = ws.Cells(ws.Rows.Count, "A").End(xlUp).Row
+    t = 2
+        For i = 2 To LastRow
+            ws.Cells(t, 12).Value = ws.Cells(t, 12).Value + ws.Cells(i, 7).Value 'sums the total stock volume
+            If ws.Cells(i, 1).Value <> ws.Cells(i + 1, 1).Value Then 'checks for changes in the ticker
+                t = t + 1
+            End If
+        Next i
+    Next ws
+End Sub
+
+Sub Greatest2()
+    Dim Max As Double
+    Dim MaxT As String
+    Dim Min As Double
+    Dim MinT As String
+    Dim MaxV As Double
+    Dim MaxVT As String
+    Dim LastRow As Long
+    Dim at As Workbook
+    Dim ws As Worksheet
+    Set at = ThisWorkbook
+    For Each ws In at.Sheets
+        LastRow = ws.Cells(Rows.Count, "I").End(xlUp).Row
+        Max = ws.Cells(2, 11).Value
+        Min = ws.Cells(2, 11).Value
+        MaxV = ws.Cells(2, 12).Value
+    
+
+        For i = 2 To LastRow
+            If Min > ws.Cells(i, 11).Value Then
+                Min = ws.Cells(i, 11).Value
+                MinT = ws.Cells(i, 9).Value
+            End If
+            If Max < ws.Cells(i, 11).Value Then
+                Max = ws.Cells(i, 11).Value
+                MaxT = ws.Cells(i, 9).Value
+            End If
+            If MaxV < ws.Cells(i, 12).Value Then
+                MaxV = ws.Cells(i, 12).Value
+                MaxVT = ws.Cells(i, 9).Value
+            End If
+        Next i
+        ws.Cells(1, 16).Value = "Ticker"
+        ws.Cells(1, 17).Value = "Value"
+        ws.Cells(2, 15).Value = "Greatest % Increase"
+        ws.Cells(3, 15).Value = "Greatest % Decrease"
+        ws.Cells(4, 15).Value = "Greatest Total Volume"
+        ws.Cells(2, 16).Value = MaxT
+        ws.Cells(2, 17).Value = Max
+        ws.Cells(3, 16).Value = MinT
+        ws.Cells(3, 17).Value = Min
+        ws.Cells(4, 16).Value = MaxVT
+        ws.Cells(4, 17).Value = MaxV
+        ws.Range("Q2:Q3").NumberFormat = "0.00%"
+        ws.Cells(4, 17).NumberFormat = "0"
+        ws.Cells.EntireColumn.AutoFit
+    Next ws
+End Sub
